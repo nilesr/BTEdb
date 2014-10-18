@@ -68,7 +68,7 @@ class Database:
 			self.Truncate(table)
 		else:
 			self.master[table] = []
-	def DeleteTable(self, table):
+	def Drop(self, table):
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
 		del self.master[table]
