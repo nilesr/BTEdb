@@ -62,15 +62,15 @@ Drop the bass:
 
     db.Drop("Table name")
 
-Truncate the bass:
+Truncate a table like this:
 
     db.Truncate("Table name")
 
-Dump the bass:
+Dump the entire database:
 
     db.Dump()
 
-Or:
+Or a specific table:
 
     db.Dump("Table name")
 
@@ -86,7 +86,7 @@ Insert like this:
 
 As with all schemaless databases, you are responsible for sanitizing the input and output to the database. It is entirely possible to store that entry and {x = 12, y = 24, pointColor = "green"} in the same table. 
 
-This can be very powerful, but only if you know what you're doing.
+That can be very powerful, but only if you know what you're doing.
 
 Select data like this:
 
@@ -96,7 +96,7 @@ This selects all entries with the UID of 1000 and the favourite color of white:
 
     db.Select("Table name", UID = 1000, favColor = 0xffffff)
 
-This selects all entries with the favourite color of white and who has an E in their username, case insensitive:
+This selects all entries with the favourite colour of white and who has an E in their username, case insensitive:
 
     db.Select("Table name", favColor = 0xffffff, lambda x: "e" in x["username"].lower())
 
@@ -122,3 +122,8 @@ Other less used methods:
 
     db.Vacuum() # Forces a write to the disk
     db.ListTables() # Guess
+
+Planned features:
+	Savepoints
+	Transactions
+	Triggers
