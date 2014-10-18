@@ -1,0 +1,33 @@
+{
+    "main table": [
+        {
+            "username": "root", 
+            "favColor": 16777215, 
+            "UID": 0
+        }, 
+        {
+            "username": "Ethan", 
+            "favColor": 16777215, 
+            "UID": 1
+        }, 
+        {
+            "username": "Niles", 
+            "favColor": 16777215, 
+            "UID": 2
+        }
+    ], 
+    "birthdays": [
+        {
+            "username": "root", 
+            "bday": 1992
+        }, 
+        {
+            "username": "Ethan", 
+            "bday": 1999
+        }, 
+        {
+            "username": "Niles", 
+            "bday": 1998
+        }
+    ]
+}
