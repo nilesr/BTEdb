@@ -110,13 +110,16 @@ It is important to note that the first non-keyword argument is the table name. N
 
 Update is a little bit more complicated. Here is an example to get you going
 
-    db.Update("Table name", db.Select(favColor = 0xffffff), UID = 12, Username = "test")
+    db.Update("Table name", db.Select("Table name", favColor = 0xffffff), UID = 12, Username = "test")
 
 This is the same as the SQL statement:
 
     UPDATE `Table name` SET `UID` = 12, `Username` = 'test' WHERE `favColor` = 0xffffff;
 
-Lambdas may be used in the select statement, but not the update statement. 
+Lambdas may be used in the select statement, but not the update statement. To achieve something similar, you can do this:
+
+    for x in db.Select("Table name", favColor = 0xffffff):
+        db.Update("Table name", [x], UID = x["UID"] + 1)
 
 Other less used methods:
 
