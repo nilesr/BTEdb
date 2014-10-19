@@ -124,6 +124,7 @@ Other less used methods:
     db.ListTables() # Guess
 
 Planned features:
-	Savepoints
-	Transactions
-	Triggers
+
+*   Savepoints
+*   Transactions
+*   Triggers
