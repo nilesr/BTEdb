@@ -123,6 +123,12 @@ Lambdas may be used in the select statement, but not the update statement. To ac
 
 That would increment the UIDs of every user with the favourite colour of white.
 
+It can also be combined with the Dump method
+
+    db.Update("main table", db.Dump("Table name"), username = "newusername")
+	
+That would change every user's username to "newusername"
+
 Other less used methods:
 
     db.Vacuum() # Forces a write to the disk
