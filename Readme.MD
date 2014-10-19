@@ -176,6 +176,8 @@ You can manually retrieve or insert a savepoint with these methods:
 	
 Under most circumstances, you should never need to use those methods. If for some reason you do, DO NOT confuse whether you are putting a save requested with a savepoint name or without one.
 
+Triggers are identified by name, which can be a string, integer, float, or a few other datatypes. The name must be unique, however you may have infinite triggers.
+
 You can add a trigger something like this:
 
     import time
@@ -186,6 +188,8 @@ You can add a trigger something like this:
 
 That will make any update to something in the "Table name" table print a message and make a new savepoint. Beware that this will run for each individual datapoint.
 
+You may also use lambda expressions.
+
 Valid events are "BEFORE INSERT", "AFTER INSERT", "BEFORE DELETE", "AFTER DELETE", "BEFORE UPDATE" and "AFTER UPDATE"
 
 With INSERT and DELETE, the same datapoint is passed to both BEFORE and AFTER handlers. With UPDATE, the old and new datapoints are passed to the BEFORE and AFTER handlers, respectively.
@@ -194,6 +198,8 @@ You may have multiple handlers for a single event.
 
 Other less used methods:
 
-    db.Vacuum() # Forces a write to the disk
-	db.ListSaves() # Lists savepoints
-    db.ListTables() # Guess
+    db.Vacuum()                 # Forces a write to the disk
+	db.ListSaves()              # Lists savepoints
+    db.ListTables()             # Guess
+	db.ListTriggers()           # Figure it out yourself
+	db.TriggerExists(name)      # Who even reads these
