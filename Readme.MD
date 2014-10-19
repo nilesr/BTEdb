@@ -104,8 +104,7 @@ You may use a lambda or a pre-defined function. For example:
 
     import urllib2
 	def CheckUser(Datapoint):
-		values = { "UID" : Datapoint["UID"],
-		"username" : Datapoint["username"] }
+		values = { "UID" : Datapoint["UID"], "username" : Datapoint["username"] }
 		postdata = urllib2.encode(values)
 		request = urllib2.Request("http://example.com/CheckUser.php",postdata)
 		response = request.read()
@@ -162,7 +161,11 @@ Loading a specific table:
 
     db.Load("Savepoint name", "Table name")
 	
-If you only saved a few tables, only those tables will be loaded if you attempt to load the entire save. Savepoints are not serialized, and will be lost if the Create or Destroy methods are used (or if your program terminates). 
+Deleting a savepoint
+
+	db.RemoveSave("Savepoint name")
+	
+If you only saved a few tables, only those tables will be loaded if you attempt to load the entire save.
 
 You can manually retrieve or insert a savepoint with these methods:
 
@@ -178,8 +181,7 @@ Other less used methods:
     db.Vacuum() # Forces a write to the disk
 	db.ListSaves() # Lists savepoints
     db.ListTables() # Guess
-
+	
 Planned features:
 
-*   Transactions
 *   Triggers

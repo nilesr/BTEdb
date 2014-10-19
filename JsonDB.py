@@ -18,28 +18,37 @@ class Database:
 		self.fileObj = None
 		self.init = False
 		self.pretty = False
+		self.saves = False
+		self.triggers = False
 		if file:
 			self.OpenDatabase(file, pretty)
-		self.saves = {}
 	def OpenDatabase(self, file, pretty = False):
 		if self.init == True:
 			self.Destroy()
 		self.__init__()
-		self.master = {}
 		self.pretty = pretty
 		try:
 			if type(file) == str:
 				self.fileObj = open(file,"r+")
-				self.master = json.loads(self.fileObj.read())
 			else:
 				self.master = json.loads(file)
 				self.fileObj = file
+			self.fileObj.seek(0,0)
+			self.master = json.loads(self.fileObj.read())[0]
+			self.fileObj.seek(0,0)
+			self.saves = json.loads(self.fileObj.read())[1]
+			self.fileObj.seek(0,0)
+			self.triggers = json.loads(self.fileObj.read())[2]
 			self._write(True)
 			#print "Done! Everything working correctly"
 		except (IOError, ValueError):
+			#print traceback.format_exc()
 			#print "Error reading from file, creating new one"
 			try:
 				self.fileObj = open(file,"w")
+				self.master = {}
+				self.saves = {}
+				self.triggers = []
 				#print "Created new file successfully"
 			except:
 				#print "Failed to create new file"
@@ -49,9 +58,10 @@ class Database:
 			#print traceback.format_exc()
 			raise DatabaseWriteIOErrorException
 			self.master = {}
+			self.saves = {}
+			self.triggers = []
 			return
 		self.init = True
-		self.saves = {}
 	def Destroy(self):
 		self._write()
 		self.init = False
@@ -104,14 +114,18 @@ class Database:
 			raise TableDoesNotExistException
 		for x in olddata:
 			for y,z in kwargs.items():
+				self._runTrigger("BEFORE UPDATE",table,x)
 				self.master[table][self.master[table].index(x)][y] = z
+				self._runTrigger("AFTER UPDATE",table,x)
 	def Delete(self, table, *args, **kwargs):
 		if not self.init:
 			raise DatabaseNotCreatedException
 		results = []
-		for z in self.master[table]:
+		for z in copy.deepcopy(self.master[table]): # We need a deep copy because we are iterating through it while deleting from it, so some values would get skipped
 			if self._matches(z, args, kwargs):
-				self.master.remove(z)
+				self._runTrigger("BEFORE DELETE",table,z)
+				del self.master[table][self.master[table].index(z)]
+				self._runTrigger("AFTER DELETE",table,z)
 				results.append(z)
 		return results
 	def Dump(self, table = False):
@@ -128,7 +142,11 @@ class Database:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
+		for x,y in kwargs.items():
+			self._runTrigger("BEFORE INSERT",table,dict(**kwargs))
 		self.master[table].append(dict(**kwargs))
+		for x,y in kwargs.items():
+			self._runTrigger("AFTER INSERT",table,dict(**kwargs)) ### FIX THIS
 		self._write()
 	def Truncate(self, table):
 		if not self.init:
@@ -137,7 +155,7 @@ class Database:
 			self.master[table] = []
 		else:
 			raise TableDoesNotExistException
-		self._write
+		self._write()
 	def ListTables(self):
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -155,9 +173,9 @@ class Database:
 			self.fileObj.seek(0,0)
 			self.fileObj.truncate()
 			if self.pretty:
-				self.fileObj.write(json.dumps(self.master, indent = self.pretty))
+				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers], indent = self.pretty))
 			else:
-				self.fileObj.write(json.dumps(self.master))
+				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers]))
 			self.fileObj.flush()
 		except IOError:
 			#print traceback.format_exc()
@@ -176,6 +194,12 @@ class Database:
 			self.saves[name][table] = copy.deepcopy(self.master[table])
 		else:
 			self.saves[name] = copy.deepcopy(self.master)
+	def RemoveSave(self,name):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		if not self.SaveExists(name):
+			raise SaveDoesNotExistException
+		del self.saves[str(name)]
 	def Load(self,name,table = False):
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -191,6 +215,7 @@ class Database:
 						self.master[table] = copy.deepcopy(self.saves[name][table])
 		else:
 			raise SaveDoesNotExistException
+		self._write()
 	def GetSave(self,name = False):
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -216,4 +241,19 @@ class Database:
 			self.saves[name] = data
 		else:
 			self.saves = data
-		
+	def _runTrigger(self,type,table,datapoint):
+		for x in self.triggers:
+			if table == x[0] and type == x[1]:
+				x[2](datapoint)
+	def AddTrigger(self,name,type,table,action):
+		if not type in ["BEFORE INSERT","AFTER INSERT","BEFORE DELETE","AFTER DELETE","BEFORE UPDATE","AFTER UPDATE"]:
+			raise NotImplementedError
+		if not self.init:
+			raise DatabaseNotCreatedException
+		self.triggers.append([type,table,action,name])
+		self._write()
+	def RemoveTrigger(self,name):
+		for x in self.triggers:
+			if x[4] == name:
+				del self.triggers[x]
+		self._write()
