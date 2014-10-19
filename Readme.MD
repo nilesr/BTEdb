@@ -82,9 +82,9 @@ Check if a table exists like this:
 
 Insert like this:
 
-    db.Insert("Table name", Username = "Niles", UID = 1000, favColor = 0xffffff)
+    db.Insert("Table name", Username = "Niles", UID = 1000, favColour = 0xffffff)
 
-As with all schemaless databases, you are responsible for sanitizing the input and output to the database. It is entirely possible to store that entry and {x = 12, y = 24, pointColor = "green"} in the same table. 
+As with all schemaless databases, you are responsible for sanitizing the input and output to the database. It is entirely possible to store that entry and {x = 12, y = 24, pointColour = "green"} in the same table. 
 
 That can be very powerful, but only if you know what you're doing.
 
@@ -92,13 +92,13 @@ Select data like this:
 
     db.Select("Table name", UID = 1000)
 
-This selects all entries with the UID of 1000 and the favourite color of white:
+This selects all entries with the UID of 1000 and the favourite colour of white:
 
-    db.Select("Table name", UID = 1000, favColor = 0xffffff)
+    db.Select("Table name", UID = 1000, favColour = 0xffffff)
 
 This selects all entries with the favourite colour of white and who has an E in their username, case insensitive:
 
-    db.Select("Table name", favColor = 0xffffff, lambda x: "e" in x["username"].lower())
+    db.Select("Table name", favColour = 0xffffff, lambda x: "e" in x["username"].lower())
 
 Deleting is similar. The following will delete any user with the UID of 1000:
 
@@ -110,16 +110,18 @@ It is important to note that the first non-keyword argument is the table name. N
 
 Update is a little bit more complicated. Here is an example to get you going
 
-    db.Update("Table name", db.Select("Table name", favColor = 0xffffff), UID = 12, Username = "test")
+    db.Update("Table name", db.Select("Table name", favColour = 0xffffff), UID = 12, Username = "test")
 
 This is the same as the SQL statement:
 
-    UPDATE `Table name` SET `UID` = 12, `Username` = 'test' WHERE `favColor` = 0xffffff;
+    UPDATE `Table name` SET `UID` = 12, `Username` = 'test' WHERE `favColour` = 0xffffff;
 
 Lambdas may be used in the select statement, but not the update statement. To achieve something similar, you can do this:
 
-    for x in db.Select("Table name", favColor = 0xffffff):
+    for x in db.Select("Table name", favColour = 0xffffff):
         db.Update("Table name", [x], UID = x["UID"] + 1)
+
+That would increment the UIDs of every user with the favourite colour of white.
 
 Other less used methods:
 
