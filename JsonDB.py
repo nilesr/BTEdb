@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, json, copy
+import sys, json, copy, dill
 if __name__ == "__main__":
 	print("Python schemaless JSON/YAML database interface")
 	print("Do not execute directly")
@@ -84,12 +84,14 @@ class Database:
 			self.Truncate(table)
 		else:
 			self.master[table] = []
+		self._write()
 	def Drop(self, table):
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
 		del self.master[table]
+		self._write()
 	def TableExists(self, table):
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -117,6 +119,7 @@ class Database:
 				self._runTrigger("BEFORE UPDATE",table,x)
 				self.master[table][self.master[table].index(x)][y] = z
 				self._runTrigger("AFTER UPDATE",table,x)
+		self._write()
 	def Delete(self, table, *args, **kwargs):
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -127,6 +130,7 @@ class Database:
 				del self.master[table][self.master[table].index(z)]
 				self._runTrigger("AFTER DELETE",table,z)
 				results.append(z)
+		self._write()
 		return results
 	def Dump(self, table = False):
 		if not self.init:
@@ -142,11 +146,9 @@ class Database:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
-		for x,y in kwargs.items():
-			self._runTrigger("BEFORE INSERT",table,dict(**kwargs))
+		self._runTrigger("BEFORE INSERT",table,dict(**kwargs))
 		self.master[table].append(dict(**kwargs))
-		for x,y in kwargs.items():
-			self._runTrigger("AFTER INSERT",table,dict(**kwargs)) ### FIX THIS
+		self._runTrigger("AFTER INSERT",table,dict(**kwargs)) ### FIX THIS
 		self._write()
 	def Truncate(self, table):
 		if not self.init:
@@ -194,6 +196,7 @@ class Database:
 			self.saves[name][table] = copy.deepcopy(self.master[table])
 		else:
 			self.saves[name] = copy.deepcopy(self.master)
+		self._write()
 	def RemoveSave(self,name):
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -241,19 +244,22 @@ class Database:
 			self.saves[name] = data
 		else:
 			self.saves = data
+		self._write()
 	def _runTrigger(self,type,table,datapoint):
 		for x in self.triggers:
 			if table == x[0] and type == x[1]:
-				x[2](datapoint)
+				print("Calling function " + str(x[3]) + " on action " + x[1])
+				dill.loads(x[2])(datapoint)
 	def AddTrigger(self,name,type,table,action):
 		if not type in ["BEFORE INSERT","AFTER INSERT","BEFORE DELETE","AFTER DELETE","BEFORE UPDATE","AFTER UPDATE"]:
 			raise NotImplementedError
 		if not self.init:
 			raise DatabaseNotCreatedException
-		self.triggers.append([type,table,action,name])
+		self.triggers.append([table,type,str(dill.dumps(action)),name])
 		self._write()
 	def RemoveTrigger(self,name):
 		for x in self.triggers:
-			if x[4] == name:
-				del self.triggers[x]
+			if x[3] == name:
+				del self.triggers[self.triggers.index(x)]
+				break
 		self._write()
