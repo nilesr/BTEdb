@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, json, copy, dill
+import sys, json, copy, dill, base64
 if __name__ == "__main__":
 	print("Python schemaless JSON/YAML database interface")
 	print("Do not execute directly")
@@ -10,7 +10,11 @@ class DatabaseWriteIOErrorException:
 	pass
 class TableDoesNotExistException:
 	pass
-class SaveDoesNotExistException:
+class SavepointDoesNotExistException:
+	pass
+class TriggerDoesNotExistException:
+	pass
+class DuplicateTriggerNameExistsException:
 	pass
 class Database:
 	def __init__(self, file = False, pretty = False):
@@ -115,16 +119,16 @@ class Database:
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
 		for x in olddata:
+			self._runTrigger("BEFORE UPDATE",table,x)
 			for y,z in kwargs.items():
-				self._runTrigger("BEFORE UPDATE",table,x)
 				self.master[table][self.master[table].index(x)][y] = z
-				self._runTrigger("AFTER UPDATE",table,x)
+			self._runTrigger("AFTER UPDATE",table,self.master[table][self.master[table].index(x)])
 		self._write()
 	def Delete(self, table, *args, **kwargs):
 		if not self.init:
 			raise DatabaseNotCreatedException
 		results = []
-		for z in copy.deepcopy(self.master[table]): # We need a deep copy because we are iterating through it while deleting from it, so some values would get skipped
+		for z in copy.deepcopy(self.master[table]): # We need a deep copy because we are iterating through it while deleting from it, so every other value would get skipped
 			if self._matches(z, args, kwargs):
 				self._runTrigger("BEFORE DELETE",table,z)
 				del self.master[table][self.master[table].index(z)]
@@ -201,7 +205,7 @@ class Database:
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.SaveExists(name):
-			raise SaveDoesNotExistException
+			raise SavepointDoesNotExistException
 		del self.saves[str(name)]
 	def Load(self,name,table = False):
 		if not self.init:
@@ -217,7 +221,7 @@ class Database:
 					if table in self.saves[name]:
 						self.master[table] = copy.deepcopy(self.saves[name][table])
 		else:
-			raise SaveDoesNotExistException
+			raise SavepointDoesNotExistException
 		self._write()
 	def GetSave(self,name = False):
 		if not self.init:
@@ -248,18 +252,40 @@ class Database:
 	def _runTrigger(self,type,table,datapoint):
 		for x in self.triggers:
 			if table == x[0] and type == x[1]:
-				print("Calling function " + str(x[3]) + " on action " + x[1])
-				dill.loads(x[2])(datapoint)
+				#print("Calling function " + str(x[3]) + " on action " + x[1])
+				dill.loads(base64.b64decode(x[2]))(self,datapoint,table,type)
 	def AddTrigger(self,name,type,table,action):
 		if not type in ["BEFORE INSERT","AFTER INSERT","BEFORE DELETE","AFTER DELETE","BEFORE UPDATE","AFTER UPDATE"]:
 			raise NotImplementedError
 		if not self.init:
 			raise DatabaseNotCreatedException
-		self.triggers.append([table,type,str(dill.dumps(action)),name])
+		if self.TriggerExists(name):
+			raise DuplicateTriggerNameExistsException
+		if not self.TableExists(table):
+			raise TableDoesNotExistException
+		self.triggers.append([table,type,base64.b64encode(dill.dumps(action)).decode("utf-8","replace"),name])
 		self._write()
 	def RemoveTrigger(self,name):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		if not self.TriggerExists(name):
+			raise TriggerDoesNotExistException
 		for x in self.triggers:
 			if x[3] == name:
 				del self.triggers[self.triggers.index(x)]
 				break
 		self._write()
+	def ListTriggers(self):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		results = []
+		for x in self.triggers:
+			results.append([x[3],x[1],x[0]])
+		return results
+	def TriggerExists(self,name):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		for x in self.triggers:
+			if x[3] == name:
+				return True
+		return False

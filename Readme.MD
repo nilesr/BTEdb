@@ -176,12 +176,24 @@ You can manually retrieve or insert a savepoint with these methods:
 	
 Under most circumstances, you should never need to use those methods. If for some reason you do, DO NOT confuse whether you are putting a save requested with a savepoint name or without one.
 
+You can add a trigger something like this:
+
+    import time
+    def handler(db, datapoint, table, event):
+		print("Handler being called on event " + event + " on datapoint " + str(datapoint) + " in table " + table)
+		db.Save(str(time.time()),table)
+    db.AddTrigger("Trigger Name", "AFTER UPDATE", "Table name", handler)
+
+That will make any update to something in the "Table name" table print a message and make a new savepoint. Beware that this will run for each individual datapoint.
+
+Valid events are "BEFORE INSERT", "AFTER INSERT", "BEFORE DELETE", "AFTER DELETE", "BEFORE UPDATE" and "AFTER UPDATE"
+
+With INSERT and DELETE, the same datapoint is passed to both BEFORE and AFTER handlers. With UPDATE, the old and new datapoints are passed to the BEFORE and AFTER handlers, respectively.
+
+You may have multiple handlers for a single event.
+
 Other less used methods:
 
     db.Vacuum() # Forces a write to the disk
 	db.ListSaves() # Lists savepoints
     db.ListTables() # Guess
-	
-Planned features:
-
-*   Triggers
