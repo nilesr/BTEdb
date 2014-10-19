@@ -142,7 +142,7 @@ That would increment the UIDs of every user with the favourite colour of white.
 
 It can also be combined with the Dump method
 
-    db.Update("main table", db.Dump("Table name"), username = "newusername")
+    db.Update("Table name", db.Dump("Table name"), username = "newusername")
 	
 That would change every user's username to "newusername"
 
