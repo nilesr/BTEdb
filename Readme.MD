@@ -99,6 +99,23 @@ This selects all entries with the UID of 1000 and the favourite colour of white:
 This selects all entries with the favourite colour of white and who has an E in their username, case insensitive:
 
     db.Select("Table name", favColour = 0xffffff, lambda x: "e" in x["username"].lower())
+	
+You may use a lambda or a pre-defined function. For example:
+
+    import urllib2
+	def CheckUser(Datapoint):
+		values = { "UID" : Datapoint["UID"],
+		"username" : Datapoint["username"] }
+		postdata = urllib2.encode(values)
+		request = urllib2.Request("http://example.com/CheckUser.php",postdata)
+		response = response.read()
+		if response == "User accepted":
+			return True
+		else:
+			return False
+	db.Select("Table name", CheckUser)
+	
+That would query an external server to check the username and UID to determine if each row should be selected or not. Be warned that this will generate a LOT of network traffic
 
 Deleting is similar. The following will delete any user with the UID of 1000:
 
