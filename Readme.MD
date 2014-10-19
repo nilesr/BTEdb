@@ -58,6 +58,8 @@ Creating a table looks like this:
 
 If the table exists, it will be truncated
 
+If the table does not exist, most of the following methods will raise a TableDoesNotExistException
+
 Drop the bass:
 
     db.Drop("Table name")
@@ -73,8 +75,6 @@ Dump the entire database:
 Or a specific table:
 
     db.Dump("Table name")
-
-If the table does not exist, it will raise a TableDoesNotExistException
 
 Check if a table exists like this:
 
