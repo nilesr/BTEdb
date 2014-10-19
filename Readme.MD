@@ -146,13 +146,40 @@ It can also be combined with the Dump method
 	
 That would change every user's username to "newusername"
 
+Saving a savepoint is as easy as this:
+
+    db.Save("Savepoint name")
+	
+Loading a savepoint:
+
+    db.Load("Savepoint name")
+	
+Saving a specific table:
+
+	db.Save("Savepoint name", "Table name")
+	
+Loading a specific table:
+
+    db.Load("Savepoint name", "Table name")
+	
+If you only saved a few tables, only those tables will be loaded if you attempt to load the entire save. Savepoints are not serialized, and will be lost if the Create or Destroy methods are used (or if your program terminates). 
+
+You can manually retrieve or insert a savepoint with these methods:
+
+    db.GetSave("Savepoint name")
+	db.GetSave()
+    db.PutSave(data,"Savepoint name")
+	db.PutSave(data)
+	
+Under most circumstances, you should never need to use those methods. If for some reason you do, DO NOT confuse whether you are putting a save requested with a savepoint name or without one.
+
 Other less used methods:
 
     db.Vacuum() # Forces a write to the disk
+	db.ListSaves() # Lists savepoints
     db.ListTables() # Guess
 
 Planned features:
 
-*   Savepoints
 *   Transactions
 *   Triggers

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, json, traceback
+import sys, json, copy
 if __name__ == "__main__":
 	print("Python schemaless JSON/YAML database interface")
 	print("Do not execute directly")
@@ -10,6 +10,8 @@ class DatabaseWriteIOErrorException:
 	pass
 class TableDoesNotExistException:
 	pass
+class SaveDoesNotExistException:
+	pass
 class Database:
 	def __init__(self, file = False, pretty = False):
 		self.master = False
@@ -18,6 +20,7 @@ class Database:
 		self.pretty = False
 		if file:
 			self.OpenDatabase(file, pretty)
+		self.saves = {}
 	def OpenDatabase(self, file, pretty = False):
 		if self.init == True:
 			self.Destroy()
@@ -48,6 +51,7 @@ class Database:
 			self.master = {}
 			return
 		self.init = True
+		self.saves = {}
 	def Destroy(self):
 		self._write()
 		self.init = False
@@ -64,15 +68,21 @@ class Database:
 				return False
 		return True
 	def Create(self, table):
+		if not self.init:
+			raise DatabaseNotCreatedException
 		if self.TableExists(table):
 			self.Truncate(table)
 		else:
 			self.master[table] = []
 	def Drop(self, table):
+		if not self.init:
+			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
 		del self.master[table]
 	def TableExists(self, table):
+		if not self.init:
+			raise DatabaseNotCreatedException
 		if table in self.master:
 			return True
 		else:
@@ -129,6 +139,8 @@ class Database:
 			raise TableDoesNotExistException
 		self._write
 	def ListTables(self):
+		if not self.init:
+			raise DatabaseNotCreatedException
 		results = []
 		for x, y in self.master.items():
 			results.append(x)
@@ -150,3 +162,58 @@ class Database:
 		except IOError:
 			#print traceback.format_exc()
 			raise DatabaseWriteIOErrorException
+	def SaveExists(self,name):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		name = str(name)
+		return name in self.saves
+	def Save(self,name,table = False):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		name = str(name)
+		self.saves[name] = {}
+		if table:
+			self.saves[name][table] = copy.deepcopy(self.master[table])
+		else:
+			self.saves[name] = copy.deepcopy(self.master)
+	def Load(self,name,table = False):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		name = str(name)
+		if self.SaveExists(name):
+			if table:
+				if not self.TableExists(table):
+					raise TableDoesNotExistException
+				self.master[table] = copy.deepcopy(self.saves[name][table])
+			else:
+				for table in self.ListTables():
+					if table in self.saves[name]:
+						self.master[table] = copy.deepcopy(self.saves[name][table])
+		else:
+			raise SaveDoesNotExistException
+	def GetSave(self,name = False):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		if name:
+			name = str(name)
+			return self.saves[name]
+		else:
+			return self.saves
+	def ListSaves(self):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		results = []
+		for x,y in self.saves.items():
+			results.append(x)
+		return results
+	def PutSave(self, data, name = False):
+		if not self.init:
+			raise DatabaseNotCreatedException
+		if type(data) != dict:
+			raise TypeError
+		if name:
+			name = str(name)
+			self.saves[name] = data
+		else:
+			self.saves = data
+		
