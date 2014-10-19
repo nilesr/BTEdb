@@ -108,7 +108,7 @@ You may use a lambda or a pre-defined function. For example:
 		"username" : Datapoint["username"] }
 		postdata = urllib2.encode(values)
 		request = urllib2.Request("http://example.com/CheckUser.php",postdata)
-		response = response.read()
+		response = request.read()
 		if response == "User accepted":
 			return True
 		else:
