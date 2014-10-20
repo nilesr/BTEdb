@@ -149,23 +149,23 @@ Saving a savepoint is as easy as this:
 
     db.Save("Savepoint name")
 	
-Loading a savepoint:
+Reverting back to a savepoint:
 
-    db.Load("Savepoint name")
+    db.Revert("Savepoint name")
 	
 Saving a specific table:
 
 	db.Save("Savepoint name", "Table name")
 	
-Loading a specific table:
+Loading a specific table from a savepoint:
 
-    db.Load("Savepoint name", "Table name")
+    db.Revert("Savepoint name", "Table name")
 	
 Deleting a savepoint
 
 	db.RemoveSave("Savepoint name")
 	
-If you only saved a few tables, only those tables will be loaded if you attempt to load the entire save.
+If you only saved a few tables, only those tables will be recovered if you attempt to load the entire save.
 
 You can manually retrieve or insert a savepoint with these methods:
 

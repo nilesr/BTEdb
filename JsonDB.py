@@ -207,7 +207,7 @@ class Database:
 		if not self.SaveExists(name):
 			raise SavepointDoesNotExistException
 		del self.saves[str(name)]
-	def Load(self,name,table = False):
+	def Revert(self,name,table = False):
 		if not self.init:
 			raise DatabaseNotCreatedException
 		name = str(name)
