@@ -194,6 +194,10 @@ Valid events are "BEFORE INSERT", "AFTER INSERT", "BEFORE DELETE", "AFTER DELETE
 
 With INSERT and DELETE, the same datapoint is passed to both BEFORE and AFTER handlers. With UPDATE, the old and new datapoints are passed to the BEFORE and AFTER handlers, respectively.
 
+Remove like this:
+
+    db.RemoveTrigger("Trigger name")
+
 You may have multiple handlers for a single event.
 
 Other less used methods:
