@@ -1,6 +1,10 @@
 from distutils.core import setup
-setup(name='JsonDB',
-      version='005',
-      py_modules=['JsonDB'],
-	  setup_requires = ["dill"],
+setup(name='BTEdb',
+      version='6.00',
+	  description="Python schemaless JSON/YAML database interface",
+	  author="Niles Rogoff",
+	  author_email="nilesrogoff@gmail.com",
+	  url="http://github.com/nilesr/BTEdb",
+      py_modules=['BTEdb'],
+	  install_requires = ["dill"],
       )

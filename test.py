@@ -1,7 +1,6 @@
-import sys
 import JsonDB
-#db = JsonDB.Database("x.json", 4)
-db = JsonDB.Database("x.json")
+db = JsonDB.Database("x.json", 4)
+#db = JsonDB.Database("x.json")
 def putData():
     db.Create("main table")
     db.Create("birthdays")

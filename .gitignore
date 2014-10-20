@@ -99,3 +99,7 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+
+
+makedist.bat
+readme.txt

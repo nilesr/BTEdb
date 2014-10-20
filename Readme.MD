@@ -1,11 +1,11 @@
-# JsonDB
-JsonDB is a project created because Ethan thought he could write a database in Python, and mine has to be better than his
+# BTedb
+BTEdb is a project created because Ethan thought he could write a database in Python, and mine has to be better than his
 
 It is a schemaless database like MongoDB that serializes to JSON. It can either serialize to a file, or an object that you pass it.
 
 An example:
 
-    db = JsonDB.Database("filename.json")
+    db = BTEdb.Database("filename.json")
 
 Or:
 
@@ -25,26 +25,26 @@ Or:
         def close(self):
             pass
     MyObject = MyClass()
-    db = JsonDB.Database(MyObject)
+    db = BTEdb.Database(MyObject)
 
 You don't need to specify an object at all when initiating a database, but you will still need to create one. For example:
 
-    db = JsonDB.Database("filename.json")
+    db = BTEdb.Database("filename.json")
 
 does the same thing as:
 
-    db = JsonDB.Database()
+    db = BTEdb.Database()
     db.OpenDatabase("filename.json")
 
 This allows you to switch files on-the-fly
 
 JsonDB also supports pretty-print. Specify any number of spaces for the database to use, for example:
 
-    db = JsonDB.Database("filename.json", 4)
+    db = BTEdb.Database("filename.json", 4)
 
 or:
 
-    db = JsonDB.Database()
+    db = BTEdb.Database()
     db.OpenDatabase("filename.json", 4)
 
 
