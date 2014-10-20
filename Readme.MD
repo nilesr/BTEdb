@@ -157,7 +157,7 @@ Saving a specific table:
 
 	db.Save("Savepoint name", "Table name")
 	
-Loading a specific table from a savepoint:
+Recovering a specific table from a savepoint:
 
     db.Revert("Savepoint name", "Table name")
 	
@@ -165,7 +165,7 @@ Deleting a savepoint
 
 	db.RemoveSave("Savepoint name")
 	
-If you only saved a few tables, only those tables will be recovered if you attempt to load the entire save.
+If you only saved a few tables, only those tables will be recovered if you attempt to recover the entire save.
 
 You can manually retrieve or insert a savepoint with these methods:
 
