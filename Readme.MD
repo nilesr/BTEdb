@@ -200,6 +200,28 @@ Remove like this:
 
 You may have multiple handlers for a single event.
 
+Transactions are necessary for an efficient database. 
+
+While not inside a transaction, methods that modify the database write out the database to the disk before they return. This is good if you don't have a lot of requests, but if you are going to execute two or more statements that modify data in a row, you should execute them within a transaction. 
+
+Begin a transaction like this:
+
+	db.BeginTransaction()
+	
+However, that will create a savepoint called "transaction". To begin a transaction without that, (you will be unable to revert the transaction) do this:
+
+	db.BeginTransaction(False)
+
+To commit the transaction and write to the disk:
+
+	db.CommitTransaction()
+	
+If you chose to make a save, you can revert a transaction:
+
+	db.RevertTransaction()
+
+You can always tell if a transaction is in progress with the boolean value ``db.TransactionInProgress``
+
 Other less used methods:
 
     db.Vacuum()                 # Forces a write to the disk

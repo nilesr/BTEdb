@@ -24,6 +24,7 @@ class Database:
 		self.pretty = False
 		self.saves = False
 		self.triggers = False
+		self.TransactionInProgress = True
 		if file:
 			self.OpenDatabase(file, pretty)
 	def OpenDatabase(self, file, pretty = False):
@@ -33,7 +34,7 @@ class Database:
 		self.pretty = pretty
 		try:
 			if type(file) == str:
-				self.fileObj = open(file,"r+")
+				self.fileObj = open(file,"r+",encoding="utf8")
 			else:
 				self.master = json.loads(file)
 				self.fileObj = file
@@ -171,10 +172,26 @@ class Database:
 		return results
 	def Vacuum(self):
 		self._write()
+	def BeginTransaction(self,makeSave = True):
+		self.TransactionInProgress = True
+		self.Save("transaction")
+	def CommitTransaction(self):
+		self.TransactionInProgress = False
+		if self.SaveExists("transaction"):
+			self.RemoveSave("transaction")
+		self._write()
+	def RevertTransaction(self):
+		if self.SaveExists("transaction"):
+			self.Revert("transaction")
+			self.RemoveSave("transaction")
+		self.TransactionInProgress = False
+		self._write()
 	def _write(self, override = False):
 		if not self.init:
 			if override == False:
 				raise DatabaseNotCreatedException
+		if self.TransactionInProgress == True:
+			return
 		try:
 			self.fileObj.seek(0,0)
 			self.fileObj.truncate()
