@@ -24,7 +24,7 @@ class Database:
 		self.pretty = False
 		self.saves = False
 		self.triggers = False
-		self.TransactionInProgress = True
+		self.TransactionInProgress = False
 		if file:
 			self.OpenDatabase(file, pretty)
 	def OpenDatabase(self, file, pretty = False):
@@ -68,7 +68,7 @@ class Database:
 			return
 		self.init = True
 	def Destroy(self):
-		self._write()
+		self._write(True)
 		self.init = False
 		self.fileObj.close()
 		self.__init__()
@@ -187,10 +187,9 @@ class Database:
 		self.TransactionInProgress = False
 		self._write()
 	def _write(self, override = False):
-		if not self.init:
-			if override == False:
-				raise DatabaseNotCreatedException
-		if self.TransactionInProgress == True:
+		if not self.init and not override:
+			raise DatabaseNotCreatedException
+		if self.TransactionInProgress and not override:
 			return
 		try:
 			self.fileObj.seek(0,0)
