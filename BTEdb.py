@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, json, copy, dill, base64
+import sys, json, copy, dill, base64, os
 if __name__ == "__main__":
 	print("Python schemaless JSON/YAML database interface")
 	print("Do not execute directly")
@@ -90,6 +90,8 @@ class Database:
 		else:
 			self.master[table] = []
 		self._write()
+	def CreateTable(self,name):
+		self.Create(name)
 	def Drop(self, table):
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -199,6 +201,7 @@ class Database:
 			else:
 				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers]))
 			self.fileObj.flush()
+			os.fsync()
 		except IOError:
 			#print traceback.format_exc()
 			raise DatabaseWriteIOErrorException
