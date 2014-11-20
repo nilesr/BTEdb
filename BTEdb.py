@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, json, copy, dill, base64, os
+import sys, json, copy, dill, base64, os, itertools
 if __name__ == "__main__":
 	print("Python schemaless JSON/YAML database interface")
 	print("Do not execute directly")
@@ -17,7 +17,7 @@ class TriggerDoesNotExistException:
 class DuplicateTriggerNameExistsException:
 	pass
 class Database:
-	def __init__(self, file = False, pretty = False):
+	def __init__(self, filename = False, pretty = False):
 		self.master = False
 		self.fileObj = None
 		self.init = False
@@ -25,19 +25,29 @@ class Database:
 		self.saves = False
 		self.triggers = False
 		self.TransactionInProgress = False
-		if file:
-			self.OpenDatabase(file, pretty)
-	def OpenDatabase(self, file, pretty = False):
+		if filename:
+			self.OpenDatabase(filename, pretty)
+	def __str__(self):
+		return str(self.master)
+	def __repr__(self):
+		temp="<BTEdb Database object. Initialized: "
+		if self.init:
+			temp += "True, file: "
+		else:
+			temp += "False file: "
+		temp += str(fileObj)
+		return temp + ">"
+	def OpenDatabase(self, filename, pretty = False):
 		if self.init == True:
 			self.Destroy()
 		self.__init__()
 		self.pretty = pretty
 		try:
-			if type(file) == str:
-				self.fileObj = open(file,"r+",encoding="utf8")
+			if type(filename) == str:
+				self.fileObj = open(filename,"r+",encoding="utf8")
 			else:
-				self.master = json.loads(file)
-				self.fileObj = file
+				self.master = json.loads(filename.read())
+				self.fileObj = filename
 			self.fileObj.seek(0,0)
 			self.master = json.loads(self.fileObj.read())[0]
 			self.fileObj.seek(0,0)
@@ -48,15 +58,15 @@ class Database:
 			#print "Done! Everything working correctly"
 		except (IOError, ValueError):
 			#print traceback.format_exc()
-			#print "Error reading from file, creating new one"
+			#print "Error reading from filename, creating new one"
 			try:
-				self.fileObj = open(file,"w")
+				self.fileObj = open(filename,"w")
 				self.master = {}
 				self.saves = {}
 				self.triggers = []
-				#print "Created new file successfully"
+				#print "Created new filename successfully"
 			except:
-				#print "Failed to create new file"
+				#print "Failed to create new filename"
 				raise DatabaseWriteIOErrorException
 		except:
 			#print "Unknown error"
@@ -78,7 +88,7 @@ class Database:
 				return False
 		for a in args:
 			if type(a) != type(lambda:True):
-				raise TypeError
+				raise triggertypeError
 			if not a(z):
 				return False
 		return True
@@ -116,7 +126,7 @@ class Database:
 			if self._matches(z, args, kwargs):
 				results.append(z)
 		return results
-	def Update(self, table, olddata, **kwargs):
+	def Update(self, table, olddata, *args, **kwargs):
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
@@ -125,6 +135,11 @@ class Database:
 			self._runTrigger("BEFORE UPDATE",table,x)
 			for y,z in kwargs.items():
 				self.master[table][self.master[table].index(x)][y] = z
+			for arg in args:
+				self.master[table][self.master[table].index(x)][arg[0]] = arg[1]
+			temp = {}
+			for arg in args:
+				x[arg[0]] = arg[1]
 			self._runTrigger("AFTER UPDATE",table,self.master[table][self.master[table].index(x)])
 		self._write()
 	def Delete(self, table, *args, **kwargs):
@@ -148,14 +163,17 @@ class Database:
 			else:
 				raise TableDoesNotExistException
 		return self.master
-	def Insert(self, table, **kwargs):
+	def Insert(self, table, *args, **kwargs):
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
-		self._runTrigger("BEFORE INSERT",table,dict(**kwargs))
-		self.master[table].append(dict(**kwargs))
-		self._runTrigger("AFTER INSERT",table,dict(**kwargs)) ### FIX THIS
+		temp = {}
+		for arg in args:
+			temp[arg[0]] = arg[1]
+		self._runTrigger("BEFORE INSERT",table,dict(itertools.chain(dict(**kwargs).items(), temp.items())))
+		self.master[table].append(dict(itertools.chain(dict(**kwargs).items(), temp.items())))
+		self._runTrigger("AFTER INSERT",table,dict(itertools.chain(dict(**kwargs).items(), temp.items())))
 		self._write()
 	def Truncate(self, table):
 		if not self.init:
@@ -195,13 +213,13 @@ class Database:
 			return
 		try:
 			self.fileObj.seek(0,0)
-			self.fileObj.truncate()
 			if self.pretty:
 				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers], indent = self.pretty))
 			else:
 				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers]))
-			self.fileObj.flush()
-			os.fsync()
+			if self.fileObj.flush():
+				os.fsync(self.fileObj.fileno())
+			self.fileObj.truncate()
 		except IOError:
 			#print traceback.format_exc()
 			raise DatabaseWriteIOErrorException
@@ -261,20 +279,20 @@ class Database:
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if type(data) != dict:
-			raise TypeError
+			raise triggertypeError
 		if name:
 			name = str(name)
 			self.saves[name] = data
 		else:
 			self.saves = data
 		self._write()
-	def _runTrigger(self,type,table,datapoint):
+	def _runTrigger(self,triggertype,table,datapoint):
 		for x in self.triggers:
-			if table == x[0] and type == x[1]:
+			if table == x[0] and triggertype == x[1]:
 				#print("Calling function " + str(x[3]) + " on action " + x[1])
-				dill.loads(base64.b64decode(x[2]))(self,datapoint,table,type)
-	def AddTrigger(self,name,type,table,action):
-		if not type in ["BEFORE INSERT","AFTER INSERT","BEFORE DELETE","AFTER DELETE","BEFORE UPDATE","AFTER UPDATE"]:
+				dill.loads(base64.b64decode(x[2]))(self,datapoint,table,triggertype)
+	def AddTrigger(self,name,triggertype,table,action):
+		if not triggertype in ["BEFORE INSERT","AFTER INSERT","BEFORE DELETE","AFTER DELETE","BEFORE UPDATE","AFTER UPDATE"]:
 			raise NotImplementedError
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -282,7 +300,7 @@ class Database:
 			raise DuplicateTriggerNameExistsException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
-		self.triggers.append([table,type,base64.b64encode(dill.dumps(action)).decode("utf-8","replace"),name])
+		self.triggers.append([table,triggertype,base64.b64encode(dill.dumps(action)).decode("utf-8","replace"),name])
 		self._write()
 	def RemoveTrigger(self,name):
 		if not self.init:
