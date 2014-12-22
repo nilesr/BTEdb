@@ -149,36 +149,36 @@ class Database:
 		for z in copy.deepcopy(self.master[table]): # We need a deep copy because we are iterating through it while deleting from it, so every other value would get skipped
 			if self._matches(z, args, kwargs):
 				self._runTrigger("BEFORE DELETE",table,z)
-				del self.master[table][self.master[table].index(z)]
+				del self.master[table][self.master[table].index(z)] # You can't just use z because that deletes it from the copy
 				self._runTrigger("AFTER DELETE",table,z)
 				results.append(z)
 		self._write()
 		return results
-	def Dump(self, table = False):
+	def Dump(self, table = False): 
 		if not self.init:
 			raise DatabaseNotCreatedException
-		if table:
-			if self.TableExists(table):
-				return self.master[table]
+		if table: # If we were passed a table
+			if self.TableExists(table): # If the table exists
+				return self.master[table] # Return it
 			else:
 				raise TableDoesNotExistException
-		return self.master
+		return self.master # If we were not passed a table, dump all the tables.
 	def Insert(self, table, *args, **kwargs):
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
-		temp = {}
+		temp = {} # Empty dictionary
 		for arg in args:
-			temp[arg[0]] = arg[1]
-		self._runTrigger("BEFORE INSERT",table,dict(itertools.chain(dict(**kwargs).items(), temp.items())))
-		self.master[table].append(dict(itertools.chain(dict(**kwargs).items(), temp.items())))
-		self._runTrigger("AFTER INSERT",table,dict(itertools.chain(dict(**kwargs).items(), temp.items())))
+			temp[arg[0]] = arg[1] # Turns a list of lists, each with two items, into the dictionary temp
+		self._runTrigger("BEFORE INSERT",table,dict(itertools.chain(kwargs.items(), temp.items()))) # the dict() thing basically just combines kwargs with temp
+		self.master[table].append(dict(itertools.chain(kwargs.items(), temp.items()))) # This is what actually inserts the datapoint
+		self._runTrigger("AFTER INSERT",table,dict(itertools.chain(kwargs.items(), temp.items())))
 		self._write()
 	def Truncate(self, table):
 		if not self.init:
 			raise DatabaseNotCreatedException
-		if self.TableExists(table):
+		if self.TableExists(table): # If the table exists, reinitialize it to an empty list
 			self.master[table] = []
 		else:
 			raise TableDoesNotExistException
@@ -187,18 +187,21 @@ class Database:
 		if not self.init:
 			raise DatabaseNotCreatedException
 		results = []
-		for x, y in self.master.items():
-			results.append(x)
+		for x, y in self.master.items(): # Master is a dictionary, and we want a list of the keys. 
+			results.append(x) # This is the best way I know to do it
 		return results
 	def Vacuum(self):
-		self._write()
+		self._write(True) # This is actually not useless, I promise
 	def BeginTransaction(self,makeSave = True):
-		self.TransactionInProgress = True
-		self.Save("transaction")
+		self.TransactionInProgress = True # Figure it out yourself
+		if makeSave:
+			self.Save("transaction") # This isn't required for everything, for example if you just want to have an insert statement in a for loop and only write
+			# 						   at the beginning and end of the loop, you would obviously want it to not write out to the disk after each insert statement, so
+			#						   you start a transaction, but you don't want to waste the extra ram because you know you aren't going to restore from this
 	def CommitTransaction(self):
 		self.TransactionInProgress = False
-		if self.SaveExists("transaction"):
-			self.RemoveSave("transaction")
+		if self.SaveExists("transaction"): # Self-documenting code
+			self.RemoveSave("transaction") # You should learn it sometime
 		self._write()
 	def RevertTransaction(self):
 		if self.SaveExists("transaction"):
