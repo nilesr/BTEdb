@@ -4,20 +4,23 @@ if __name__ == "__main__":
 	print("Python schemaless JSON/YAML database interface")
 	print("Do not execute directly")
 	sys.exit(1)
-class DatabaseNotCreatedException:
+# Define exceptions
+class DatabaseNotCreatedException(Exception):
 	pass
-class DatabaseWriteIOErrorException:
+class DatabaseWriteIOErrorException(Exception):
 	pass
-class TableDoesNotExistException:
+class TableDoesNotExistException(Exception):
 	pass
-class SavepointDoesNotExistException:
+class SavepointDoesNotExistException(Exception):
 	pass
-class TriggerDoesNotExistException:
+class TriggerDoesNotExistException(Exception):
 	pass
-class DuplicateTriggerNameExistsException:
+class DuplicateTriggerNameExistsException(Exception):
 	pass
+# Database class
 class Database:
-	def __init__(self, filename = False, pretty = False):
+	def __init__(self, filename = False, pretty = False): # Init function. 
+		# Set initial values
 		self.master = False
 		self.fileObj = None
 		self.init = False
@@ -25,11 +28,11 @@ class Database:
 		self.saves = False
 		self.triggers = False
 		self.TransactionInProgress = False
-		if filename:
-			self.OpenDatabase(filename, pretty)
+		if filename: # If a filename was specified
+			self.OpenDatabase(filename, pretty) # Open the file
 	def __str__(self):
-		return str(self.master)
-	def __repr__(self):
+		return str(self.master) # This is useless
+	def __repr__(self): # This too
 		temp="<BTEdb Database object. Initialized: "
 		if self.init:
 			temp += "True, file: "
@@ -37,30 +40,30 @@ class Database:
 			temp += "False file: "
 		temp += str(fileObj)
 		return temp + ">"
-	def OpenDatabase(self, filename, pretty = False):
-		if self.init == True:
-			self.Destroy()
-		self.__init__()
-		self.pretty = pretty
+	def OpenDatabase(self, filename, pretty = False): # Open database file
+		if self.init == True: # If we are alredy initiated
+			self.Destroy() # Destroy
+		self.__init__() # Reset everything to the default.
+		self.pretty = pretty # Set "pretty" as an instance variable
 		try:
-			if type(filename) == str:
-				self.fileObj = open(filename,"r+",encoding="utf8")
-			else:
-				self.master = json.loads(filename.read())
+			if type(filename) == str: # If we're being called on a string
+				self.fileObj = open(filename,"r+",encoding="utf8", os.O_NONBLOCK) # set fileobj to open
+			else: # otherwise
+				self.master = json.loads(filename.read()) # assume it's an object and try to read from it
 				self.fileObj = filename
-			self.fileObj.seek(0,0)
-			self.master = json.loads(self.fileObj.read())[0]
+			self.fileObj.seek(0,0) # This might be able to be improved, but whatever
+			self.master = json.loads(self.fileObj.read())[0] # Remember that we dump a list, of three things, so we have to deserialize them like that
 			self.fileObj.seek(0,0)
 			self.saves = json.loads(self.fileObj.read())[1]
 			self.fileObj.seek(0,0)
 			self.triggers = json.loads(self.fileObj.read())[2]
-			self._write(True)
+			self._write(True) # We haven't yet set self.init to true, so we must specify override
 			#print "Done! Everything working correctly"
 		except (IOError, ValueError):
 			#print traceback.format_exc()
 			#print "Error reading from filename, creating new one"
 			try:
-				self.fileObj = open(filename,"w")
+				self.fileObj = open(filename,"w", os.O_NONBLOCK)
 				self.master = {}
 				self.saves = {}
 				self.triggers = []
@@ -75,85 +78,85 @@ class Database:
 			self.master = {}
 			self.saves = {}
 			self.triggers = []
-			return
 		self.init = True
-	def Destroy(self):
-		self._write(True)
-		self.init = False
-		self.fileObj.close()
-		self.__init__()
-	def _matches(self, z, args, kwargs):
-		for x,y in kwargs.items():
+	def Destroy(self): # Destroy function
+		self._write(True) # Write out one last time
+		self.init = False # Class is no longer in session
+		self.fileObj.close() # Attempt to close the file descriptor.
+		self.__init__() # Reset everything to default again
+	def _matches(self, z, args, kwargs): # Internal function to test if something matches.
+		for x,y in kwargs.items(): # Kwargs is a dictionary, when you pass something like "UID = 0" to the insert, update, etc.. functions it ends up as a dictionary. 
+			# In the iteration, as soon as we know a single condition doesn't match, return false
 			if z[x] != y:
 				return False
-		for a in args:
-			if type(a) != type(lambda:True):
-				raise triggertypeError
-			if not a(z):
+		for a in args: # Iterate over the list of callables passed to the parent function
+			if type(a) != type(lambda:True): # If it's not a callable, that's a serious problem
+				raise TypeError
+			if not a(z): # Call the callable with the datapoint
 				return False
-		return True
-	def Create(self, table):
+		return True # Every condition must match in order to get to this point
+	def Create(self, table): # Create table function
 		if not self.init:
 			raise DatabaseNotCreatedException
-		if self.TableExists(table):
-			self.Truncate(table)
-		else:
-			self.master[table] = []
-		self._write()
-	def CreateTable(self,name):
+		if self.TableExists(table): # If the table exists
+			self.Truncate(table) # Truncate it
+		else: # Else
+			self.master[table] = [] # Make it an empty list
+		self._write() # Filesystem write
+	def CreateTable(self,name): # CreateTable is an alias to Create
 		self.Create(name)
-	def Drop(self, table):
+	def Drop(self, table): # Drop table function
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
-		del self.master[table]
-		self._write()
-	def TableExists(self, table):
+		del self.master[table] # Delete it
+		self._write() # Filesystem write
+	def TableExists(self, table): # Test if a table exists
 		if not self.init:
 			raise DatabaseNotCreatedException
-		if table in self.master:
-			return True
+		if table in self.master: # If the table exists
+			return True # Return True
 		else:
 			return False
-	def Select(self, table, *args, **kwargs):
+	def Select(self, table, *args, **kwargs): # Select data
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
-		results = []
-		for z in self.master[table]:
-			if self._matches(z, args, kwargs):
-				results.append(z)
-		return results
-	def Update(self, table, olddata, *args, **kwargs):
+		results = [] # Results is an empty list
+		for z in self.master[table]: # For each datapoint in the table
+			if self._matches(z, args, kwargs): # If the datapoint matches the arguments passed
+				results.append(z) # Add it to the results list
+		return results # Return the results list
+	def Update(self, table, olddata, *args, **kwargs): # Update data
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if not self.TableExists(table):
 			raise TableDoesNotExistException
-		for x in olddata:
-			self._runTrigger("BEFORE UPDATE",table,x)
-			for y,z in kwargs.items():
-				self.master[table][self.master[table].index(x)][y] = z
-			for arg in args:
-				self.master[table][self.master[table].index(x)][arg[0]] = arg[1]
-			temp = {}
-			for arg in args:
+		for x in olddata: # For each datapoint passed
+			self._runTrigger("BEFORE UPDATE",table,x) # Run the trigger on that datapoint
+			for y,z in kwargs.items(): # For each key,value in the dictionary kwargs (passed like "UID = 12")
+				self.master[table][self.master[table].index(x)][y] = z # set key = value in the datapoint in the table
+				x[y] = z # set key = value in the temporary datapoint
+			for arg in args: # For each argument in the list of non-keyword arguments. 
+				self.master[table][self.master[table].index(x)][arg[0]] = arg[1] # Assume it's a list/indexable and set the first item equal to the second item in the datapoint
 				x[arg[0]] = arg[1]
-			self._runTrigger("AFTER UPDATE",table,self.master[table][self.master[table].index(x)])
-		self._write()
-	def Delete(self, table, *args, **kwargs):
+			self._runTrigger("AFTER UPDATE",table,self.master[table][self.master[table].index(x)]) # Run trigger
+		self._write() # Filesystem write
+	def Delete(self, table, *args, **kwargs): # Delete function
 		if not self.init:
 			raise DatabaseNotCreatedException
-		results = []
+		results = [] # Results is an empty list
 		for z in copy.deepcopy(self.master[table]): # We need a deep copy because we are iterating through it while deleting from it, so every other value would get skipped
-			if self._matches(z, args, kwargs):
-				self._runTrigger("BEFORE DELETE",table,z)
+			# For each datapoint in the table
+			if self._matches(z, args, kwargs): # If it matches the passed arguments
+				self._runTrigger("BEFORE DELETE",table,z) # Run a trigger
 				del self.master[table][self.master[table].index(z)] # You can't just use z because that deletes it from the copy
-				self._runTrigger("AFTER DELETE",table,z)
-				results.append(z)
-		self._write()
-		return results
+				self._runTrigger("AFTER DELETE",table,z) # Run another trigger
+				results.append(z) # Append the deleted datapoint to the results list
+		self._write() # Filesystem write
+		return results # Return the results
 	def Dump(self, table = False): 
 		if not self.init:
 			raise DatabaseNotCreatedException
@@ -198,134 +201,131 @@ class Database:
 			self.Save("transaction") # This isn't required for everything, for example if you just want to have an insert statement in a for loop and only write
 			# 						   at the beginning and end of the loop, you would obviously want it to not write out to the disk after each insert statement, so
 			#						   you start a transaction, but you don't want to waste the extra ram because you know you aren't going to restore from this
+		else:
+			self.RemoveSave("transaction") # If we don't do this, it will reset to the old save if you do RevertTransaction
 	def CommitTransaction(self):
 		self.TransactionInProgress = False
 		if self.SaveExists("transaction"): # Self-documenting code
 			self.RemoveSave("transaction") # You should learn it sometime
 		self._write()
 	def RevertTransaction(self):
-		if self.SaveExists("transaction"):
-			self.Revert("transaction")
-			self.RemoveSave("transaction")
-		self.TransactionInProgress = False
-		self._write()
-	def _write(self, override = False):
+		if self.SaveExists("transaction"): # If the transaction save exists
+			self.Revert("transaction") #	 Revert to it
+			self.RemoveSave("transaction") # Delete it
+		self.TransactionInProgress = False # No longer in a transaction
+		self._write() # 					 Write to disk
+	def _write(self, override = False): # Write to disk function
 		if not self.init and not override:
 			raise DatabaseNotCreatedException
-		if self.TransactionInProgress and not override:
+		if self.TransactionInProgress and not override: # Write even if a transaction is in progress if override is set to true
 			return
 		try:
-			self.fileObj.seek(0,0)
+			self.fileObj.seek(0,0) # The first number is the number of bytes into the file, the second one is the seek mode.
 			if self.pretty:
-				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers], indent = self.pretty))
+				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers], indent = self.pretty)) # These lines are pretty much the same
 			else:
 				self.fileObj.write(json.dumps([self.master,self.saves,self.triggers]))
-			if self.fileObj.flush():
+			self.fileObj.truncate() # Remove everything after the end of where the current write head is, which is at the end of our dump
+			if self.fileObj.flush(): # If flush returns false, don't use fsync on the filenumber, so if the user is using an object this function just has to return false
 				os.fsync(self.fileObj.fileno())
-			self.fileObj.truncate()
 		except IOError:
 			#print traceback.format_exc()
 			raise DatabaseWriteIOErrorException
-	def SaveExists(self,name):
+	def SaveExists(self,name): # Check if a save does or does not exist
 		if not self.init:
 			raise DatabaseNotCreatedException
-		name = str(name)
-		return name in self.saves
+		return name in self.saves # Pretty self explanatory
 	def Save(self,name,table = False):
 		if not self.init:
 			raise DatabaseNotCreatedException
-		name = str(name)
-		self.saves[name] = {}
+		self.saves[name] = {} # Initialize that save to an empty dictionary
 		if table:
-			self.saves[name][table] = copy.deepcopy(self.master[table])
+			self.saves[name][table] = copy.deepcopy(self.master[table]) # If table is set to true, copy that table to the save. Else, copy a dictionary of all the tables
 		else:
 			self.saves[name] = copy.deepcopy(self.master)
-		self._write()
-	def RemoveSave(self,name):
+		self._write() # Write to the filesystem
+	def RemoveSave(self,name): # Remove save function
 		if not self.init:
 			raise DatabaseNotCreatedException
-		if not self.SaveExists(name):
+		if not self.SaveExists(name): # Make sure what we're deleting exists to begin with
 			raise SavepointDoesNotExistException
-		del self.saves[str(name)]
-	def Revert(self,name,table = False):
+		del self.saves[name] # A simple del statement to do the deleting
+	def Revert(self,name,table = False): # Revert to a savepoint
 		if not self.init:
 			raise DatabaseNotCreatedException
-		name = str(name)
-		if self.SaveExists(name):
-			if table:
+		if self.SaveExists(name): # Make sure what we're reverting to exists
+			if table: # If they specified a table name, 
 				if not self.TableExists(table):
 					raise TableDoesNotExistException
-				self.master[table] = copy.deepcopy(self.saves[name][table])
+				self.master[table] = copy.deepcopy(self.saves[name][table]) # set that table equal to the savepoint
 			else:
-				for table in self.ListTables():
-					if table in self.saves[name]:
-						self.master[table] = copy.deepcopy(self.saves[name][table])
+				for table in self.ListTables(): # Iterate through all the tables in the current database
+					if table in self.saves[name]: # Reset each table if it exists in the savepoint. This ensures that other data from other tables won't be affected.
+						self.master[table] = copy.deepcopy(self.saves[name][table]) 
 		else:
 			raise SavepointDoesNotExistException
-		self._write()
-	def GetSave(self,name = False):
+		self._write() # Filesystem write
+	def GetSave(self,name = False): # Return a savepoint. Don't use this unless you understand how this sytem works. Well
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if name:
-			name = str(name)
 			return self.saves[name]
 		else:
 			return self.saves
-	def ListSaves(self):
+	def ListSaves(self): # List savepoints
 		if not self.init:
 			raise DatabaseNotCreatedException
-		results = []
-		for x,y in self.saves.items():
+		results = [] # Empty results list
+		for x,y in self.saves.items(): # Get just a list of the keys from the dictionary
 			results.append(x)
-		return results
-	def PutSave(self, data, name = False):
+		return results # Return results when we're done with it
+	def PutSave(self, data, name = False): # Takes a savepoint and places it in the savepoint system, overwriting what was already there
+		# Don't use this unless you know what you're doing
 		if not self.init:
 			raise DatabaseNotCreatedException
 		if type(data) != dict:
-			raise triggertypeError
+			raise TypeError
 		if name:
-			name = str(name)
 			self.saves[name] = data
 		else:
 			self.saves = data
 		self._write()
-	def _runTrigger(self,triggertype,table,datapoint):
-		for x in self.triggers:
-			if table == x[0] and triggertype == x[1]:
-				#print("Calling function " + str(x[3]) + " on action " + x[1])
-				dill.loads(base64.b64decode(x[2]))(self,datapoint,table,triggertype)
-	def AddTrigger(self,name,triggertype,table,action):
-		if not triggertype in ["BEFORE INSERT","AFTER INSERT","BEFORE DELETE","AFTER DELETE","BEFORE UPDATE","AFTER UPDATE"]:
+	def _runTrigger(self,triggertype,table,datapoint): # This is an internal function to run triggers
+		for x in self.triggers: # Iterate through all loaded triggers
+			if table == x[0] and triggertype == x[1]: # If the triggertype (something like "AFTER INSERT") matches what we need to run this time, on this table
+				dill.loads(base64.b64decode(x[2]))(self,datapoint,table,triggertype) # Base64decode the bytecode, convert the bytecode to a callable, call it with four arguments
+	def AddTrigger(self,name,triggertype,table,action): # This registers a new trigger
+		if not triggertype in ["BEFORE INSERT","AFTER INSERT","BEFORE DELETE","AFTER DELETE","BEFORE UPDATE","AFTER UPDATE"]: # Verify that the trigger is valid
 			raise NotImplementedError
 		if not self.init:
 			raise DatabaseNotCreatedException
-		if self.TriggerExists(name):
+		if self.TriggerExists(name): # Make sure we're not overwriting a trigger
 			raise DuplicateTriggerNameExistsException
-		if not self.TableExists(table):
+		if not self.TableExists(table): # Make sure the table exists
 			raise TableDoesNotExistException
-		self.triggers.append([table,triggertype,base64.b64encode(dill.dumps(action)).decode("utf-8","replace"),name])
-		self._write()
-	def RemoveTrigger(self,name):
+		self.triggers.append([table,triggertype,base64.b64encode(dill.dumps(action)).decode("utf-8","replace"),name]) # Take the function, serialize it to bytecode, base64 it, convert it to a string, put it in a list along with the table to execute it on, the trigger type, and the name of the trigger, then take that list and add it to the list of triggers
+		self._write() # Filesystem write
+	def RemoveTrigger(self,name): # Remove a trigger
 		if not self.init:
 			raise DatabaseNotCreatedException
-		if not self.TriggerExists(name):
+		if not self.TriggerExists(name): # Verify that the trigger exists
 			raise TriggerDoesNotExistException
-		for x in self.triggers:
-			if x[3] == name:
-				del self.triggers[self.triggers.index(x)]
-				break
-		self._write()
-	def ListTriggers(self):
+		for x in self.triggers: # Iterate through all triggers
+			if x[3] == name: # If the name of the trigger is the name we were passed
+				del self.triggers[self.triggers.index(x)] # Delete it
+				break # Stop iterating
+		self._write() # Filesystem write
+	def ListTriggers(self): # List triggers
 		if not self.init:
 			raise DatabaseNotCreatedException
 		results = []
-		for x in self.triggers:
-			results.append([x[3],x[1],x[0]])
-		return results
-	def TriggerExists(self,name):
+		for x in self.triggers: # For each trigger
+			results.append([x[3],x[1],x[0]]) # Add a list of the name, type and table of the trigger
+		return results # Return those lists
+	def TriggerExists(self,name): # Test if a trigger exists
 		if not self.init:
 			raise DatabaseNotCreatedException
-		for x in self.triggers:
-			if x[3] == name:
-				return True
-		return False
+		for x in self.triggers: # Iterate through triggers
+			if x[3] == name: # If the name equals the name we were passed
+				return True # return that it does exist
+		return False # If we finish iteration, return that it does not exist
