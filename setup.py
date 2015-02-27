@@ -1,6 +1,6 @@
 from distutils.core import setup
 setup(name='BTEdb',
-      version='6.2.7',
+      version='6.2.9',
 	  description="Python schemaless JSON/YAML database interface",
 	  author="Niles Rogoff",
 	  author_email="nilesrogoff@gmail.com",

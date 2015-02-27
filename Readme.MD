@@ -1,4 +1,4 @@
-# BTedb
+# BTEdb
 BTEdb (Better Than Ethan's database) is a project created because Ethan thought he could write a database in Python, and mine has to be better than his
 
 It is a schemaless database like MongoDB that serializes to JSON. It can either serialize to a file, or an object that you pass it.

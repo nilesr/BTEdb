@@ -5,17 +5,17 @@ if __name__ == "__main__":
 	print("Do not execute directly")
 	sys.exit(1)
 # Define exceptions
-class DatabaseNotCreatedException(Exception):
+class DatabaseNotCreatedException(BaseException):
 	pass
-class DatabaseWriteIOErrorException(Exception):
+class DatabaseWriteIOErrorException(BaseException):
 	pass
-class TableDoesNotExistException(Exception):
+class TableDoesNotExistException(BaseException):
 	pass
-class SavepointDoesNotExistException(Exception):
+class SavepointDoesNotExistException(BaseException):
 	pass
-class TriggerDoesNotExistException(Exception):
+class TriggerDoesNotExistException(BaseException):
 	pass
-class DuplicateTriggerNameExistsException(Exception):
+class DuplicateTriggerNameExistsException(BaseException):
 	pass
 # Database class
 class Database:
@@ -47,7 +47,7 @@ class Database:
 		self.pretty = pretty # Set "pretty" as an instance variable
 		try:
 			if type(filename) == str: # If we're being called on a string
-				self.fileObj = open(filename,"r+",encoding="utf8", os.O_NONBLOCK) # set fileobj to open
+				self.fileObj = open(filename,"r+", os.O_NONBLOCK, encoding="utf8") # set fileobj to open
 			else: # otherwise
 				self.master = json.loads(filename.read()) # assume it's an object and try to read from it
 				self.fileObj = filename
