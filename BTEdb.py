@@ -33,13 +33,7 @@ class Database:
 	def __str__(self):
 		return str(self.master) # This is useless
 	def __repr__(self): # This too
-		temp="<BTEdb Database object. Initialized: "
-		if self.init:
-			temp += "True, file: "
-		else:
-			temp += "False file: "
-		temp += str(fileObj)
-		return temp + ">"
+		return "<BTEdb Database object. Initialized: " + str(self.init) + ", file: " + str(fileObj) + ">"
 	def OpenDatabase(self, filename, pretty = False): # Open database file
 		if self.init == True: # If we are alredy initiated
 			self.Destroy() # Destroy
