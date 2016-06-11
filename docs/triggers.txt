@@ -1,0 +1,42 @@
+============
+Triggers
+============
+Triggers are identified by name, which can be a string, integer, float, or a few other datatypes. The name must be unique, however you may have infinite triggers.
+
+Creating
+------------------
+You can add a trigger something like this::
+
+    import time
+    def handler(db, datapoint, table, event):
+		print("Handler being called on event " + event + " on datapoint " + str(datapoint) + " in table " + table)
+		db.Save(str(time.time()),table)
+    db.AddTrigger("Trigger Name", "AFTER UPDATE", "Table name", handler)
+
+That will make any update to something in the "Table name" table print a message and make a new savepoint. Beware that this will run for each individual datapoint.
+
+You may also use lambda expressions.
+
+Valid events are ``"BEFORE INSERT"``, ``"AFTER INSERT"``, ``"BEFORE DELETE"``, ``"AFTER DELETE"``, ``"BEFORE UPDATE"`` and ``"AFTER UPDATE"``
+
+With ``INSERT`` and ``DELETE``, the same datapoint is passed to both ``BEFORE`` and ``AFTER`` handlers. With ``UPDATE``, the old and new datapoints are passed to the ``BEFORE`` and ``AFTER`` handlers, respectively.
+
+You may have multiple triggers for a single event.
+
+Checking
+------------
+Check if a trigger exists like this::
+
+	db.TriggerExists("Trigger name")
+
+Listing
+----------
+List triggers like this::
+
+ db.ListTriggers()
+
+Removing
+------------------
+Remove like this::
+
+    db.RemoveTrigger("Trigger name")

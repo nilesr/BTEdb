@@ -1,0 +1,7 @@
+==================
+More information
+==================
+
+For more information `browse the source yourself <http://github.org/nilesr/BTEdb/blob/master/BTEdb.py>`_.
+
+

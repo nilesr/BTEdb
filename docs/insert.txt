@@ -1,0 +1,20 @@
+==============
+Inputting data
+==============
+Add a datapoint (more commonly known as a document) to a table like this::
+
+ db.Insert("Table name", Key = Value)
+
+A more readable example::
+
+ db.Insert("Table name", Username = "Niles", UID = 1000, favColour = 0xffffff)
+
+You can also pass lists (or anything indicible with an integer), if you don't know the column name::
+
+    db.Insert("Table name", [someFunctionThatReturnsColumnName(),"data here"])
+
+An example using the splat operator::
+
+    db.Insert("Table name", *[[x["column_name"], x["data"]] for x in data], a = 9)
+
+As with all schemaless databases, you are responsible for sanitizing the input and output to the database. It is entirely possible to store the above entry as well as ``{x = 12, y = 24, pointColour = "green"}`` in the same table. 

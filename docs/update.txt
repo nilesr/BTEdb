@@ -1,0 +1,28 @@
+==============
+Modifying data
+==============
+The ``Update`` method
+---------------------
+
+Update is a little bit more complicated. Here is an example to get you going::
+
+    db.Update("Table name", db.Select("Table name", favColour = 0xffffff), UID = 12, Username = "test")
+
+This is the same as the SQL statement::
+
+    UPDATE `Table name` SET `UID` = 12, `Username` = 'test' WHERE `favColour` = 0xffffff;
+
+Lambdas may be used in the select statement, but not the update statement. To achieve something similar, you can do this::
+
+    for datapoint in db.Select("Table name", favColour = 0xffffff):
+        db.Update("Table name", [datapoint], UID = datapoint["UID"] + 1)
+
+That would increment the UIDs of every user with the favourite colour of white.
+
+It can also be combined with the Dump method::
+
+    db.Update("Table name", db.Dump("Table name"), username = "newusername")
+	
+That would change every user's username to "newusername"
+
+Just as with inserts, you may use lists to update data.

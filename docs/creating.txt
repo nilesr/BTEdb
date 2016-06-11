@@ -1,0 +1,68 @@
+==============================
+Creating or loading a database
+==============================
+From a file
+-----------
+Creating a new database is this simple::
+
+ db = BTEdb.Database("filename.json")
+
+This will create the file ``filename.json`` in the current working directory. If it already exists, it will be loaded.
+
+You don't need to specify a database to create an object, for example::
+
+    db = BTEdb.Database()
+    db.OpenDatabase("filename.json")
+
+This allows you to recycle the same object when modifying different databases
+
+JsonDB also supports pretty-print. Specify any number of spaces for the database to use, for example::
+
+    db = BTEdb.Database("filename.json", 4)
+
+or::
+
+    db = BTEdb.Database()
+    db.OpenDatabase("filename.json", 4)
+
+From an object
+--------------
+
+This piece of code would also create a valid database::
+
+    class MyClass:
+        def seek(self,position,mode):
+            pass
+        def truncate(self):
+            return False
+        def __init__(self):
+            self.data = ""
+        def write(self,data):
+            self.data = data
+        def flush(self):
+            pass
+        def read(self):
+            return self.data
+        def close(self):
+            pass
+    MyObject = MyClass()
+    db = BTEdb.Database(MyObject)
+
+Any object with those functions is valid
+
+Destroying a database
+---------------------
+Databases can be destroyed like so::
+
+ db.Destroy()
+
+This will save your data and safely close the file descriptor, then reset the object to a state as if you created the object but did not specify a filename. This allows you to reuse the same object to modify multiple databases
+
+Writing out
+------------
+
+BTEdb will automatically write out to a file after making any changes, but if you really like to be safe you can use this method::
+
+    db.Vacuum()
+
+This will force a write to the disk

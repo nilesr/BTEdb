@@ -1,0 +1,57 @@
+==============
+Selecting data
+==============
+Selecting all data
+------------------
+To select all data, or just all data in a table, you can use the ``Dump`` method::
+
+ db.Dump()
+ db.Dump("Table name")
+
+The second one will return all datapoints in a table, while the first one will return a dictionary, with the keys being the table names and the values being a list of datapoints in that table
+
+Selecting specific data
+-----------------------
+
+Select datapoints from a table like this::
+
+    db.Select("Table name", UID = 1000)
+
+Or::
+
+    db.Select("Table name", UID = 1000, favColour = 0xffffff)
+
+The first example selects all users with the UID of 1000, and the second one selects all users with the UID of 1000 AND the favourite colour white.
+
+The function returns a list of datapoints.
+
+The following selects all entries with the favourite colour of white and has an E in their username, case insensitive::
+
+    db.Select("Table name", lambda datapoint: "e" in datapoint["username"].lower(), favColour = 0xffffff)
+
+Note that the function comes before the color parameter. This is because python requires that unnamed arguments come before any keyword arguments. 
+
+You may also use a pre-defined function. For example, to query an external server to determine which data should be selected and which shouldn't, you can use a function like this::
+
+ 	import urllib2
+	def CheckUser(Datapoint):
+		values = { "UID" : Datapoint["UID"], "username" : Datapoint["username"] }
+		postdata = urllib2.encode(values)
+		request = urllib2.Request("http://example.com/CheckUser.php",postdata)
+		response = request.read()
+		if response == "User accepted":
+			return True
+		else:
+			return False
+	db.Select("Table name", CheckUser)
+
+Deleting data
+-------------
+
+Deleting data is almost exactly the same as selecting it, except it deletes the data after selecting it. It returns a list of the datapoints it deleted.
+
+An example::
+
+    db.Delete("Table name", UID = 1000)
+
+Just as in the ``Select`` method, functions and lambdas may be used

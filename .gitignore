@@ -103,3 +103,5 @@ $RECYCLE.BIN/
 
 makedist.bat
 readme.txt
+docs/_*
+x.json

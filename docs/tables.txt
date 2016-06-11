@@ -1,0 +1,42 @@
+======
+Tables
+======
+Creating a table
+----------------
+Creating a table looks like this::
+
+    db.Create("Table name")
+
+If the table exists, it will be truncated
+
+Deleting a table
+----------------
+Delete a table like this::
+
+    db.Drop("Table name")
+
+This will raise a ``TableDoesNotExistException`` if the table does not exist
+
+Truncating a table
+------------------
+Truncate a table like this::
+
+    db.Truncate("Table name")
+
+This will raise a ``TableDoesNotExistException`` if the table does not exist
+
+Getting a list of tables
+------------------------
+
+Retrieve a list of tables::
+
+ db.ListTables()
+
+Check to see if a table exists
+------------------------------
+
+Check if a table exists like this::
+
+ db.TableExists("Table name")
+
+This returns only either ``True`` or ``False``

@@ -1,0 +1,52 @@
+==========
+Savepoints
+==========
+Creating
+--------
+Creating a savepoint is as easy as this::
+
+    db.Save("Savepoint name")
+
+Saving a specific table::
+
+	db.Save("Savepoint name", "Table name")
+
+Reverting
+---------
+Reverting back to a savepoint::
+
+    db.Revert("Savepoint name")
+	
+Recovering a specific table from a savepoint::
+
+    db.Revert("Savepoint name", "Table name")
+
+If you only saved a few tables, only those tables will be recovered if you attempt to recover the entire save. Other tables will remain untouched
+
+Removing
+--------
+Deleting a savepoint::
+
+	db.RemoveSave("Savepoint name")
+
+Listing savepoints
+------------------
+List your savepoints like this::
+
+	db.ListSaves()
+
+Verify a savepoint exists like this::
+
+	db.SaveExists("name")
+
+Manual editing of savepoints
+----------------------------
+
+You can manually retrieve or insert a savepoint with these methods::
+
+    db.GetSave("Savepoint name")
+    db.GetSave()
+    db.PutSave(data,"Savepoint name")
+    db.PutSave(data)
+	
+Under most circumstances, you should never need to use those methods. If for some reason you do, DO NOT confuse whether you are putting a save requested with a savepoint name or without one.
