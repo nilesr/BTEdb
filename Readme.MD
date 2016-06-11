@@ -13,7 +13,7 @@ Or:
         def seek(self,position,mode):
             pass
         def truncate(self):
-            self.data = ""
+            return False
         def __init__(self):
             self.data = ""
         def write(self,data):
@@ -38,7 +38,7 @@ does the same thing as:
 
 This allows you to switch files on-the-fly
 
-JsonDB also supports pretty-print. Specify any number of spaces for the database to use, for example:
+BTEdb also supports pretty-print. Specify any number of spaces for the database to use, for example:
 
     db = BTEdb.Database("filename.json", 4)
 
@@ -85,8 +85,6 @@ Insert like this:
     db.Insert("Table name", Username = "Niles", UID = 1000, favColour = 0xffffff)
 
 As with all schemaless databases, you are responsible for sanitizing the input and output to the database. It is entirely possible to store that entry and {x = 12, y = 24, pointColour = "green"} in the same table. 
-
-That can be very powerful, but only if you know what you're doing.
 
 Select data like this:
 
