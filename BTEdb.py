@@ -45,7 +45,10 @@ class Database:
 		self.pretty = pretty # Set "pretty" as an instance variable
 		try:
 			if type(filename) == str: # If we're being called on a string
-				self.fileObj = open(filename,"r+", os.O_NONBLOCK, encoding="utf8") # set fileobj to open
+				try:
+					self.fileObj = open(filename,"r+", os.O_NONBLOCK, encoding="utf8") # set fileobj to open
+				except TypeError:
+					self.fileObj = open(filename,"r+", os.O_NONBLOCK) # python2 compat
 			else: # otherwise
 				self.master = json.loads(filename.read()) # assume it's an object and try to read from it
 				self.fileObj = filename
